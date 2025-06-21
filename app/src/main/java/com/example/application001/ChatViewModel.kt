@@ -25,13 +25,19 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     val uiState: State<ChatUiState> = _uiState
 
     private val settingsManager = SettingsManager(context)
-    private var openAIClient = OpenAIClient("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")
+    private var openAIClient = OpenAIClient(BuildConfig.OPENAI_API_KEY)
 
     init {
         viewModelScope.launch {
-            // Initialize OpenAI client with saved API key
-            val apiKey = settingsManager.apiKey.first()
-            if (apiKey != "your-openai-api-key-here") {
+            // Initialize OpenAI client with saved API key or fallback to BuildConfig
+            val savedApiKey = settingsManager.apiKey.first()
+            val apiKey = if (savedApiKey.isNotBlank() && savedApiKey != "your-openai-api-key-here") {
+                savedApiKey
+            } else {
+                BuildConfig.OPENAI_API_KEY
+            }
+            
+            if (apiKey.isNotBlank()) {
                 openAIClient = OpenAIClient(apiKey)
             }
             
