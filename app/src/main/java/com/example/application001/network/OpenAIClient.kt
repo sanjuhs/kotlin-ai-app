@@ -1,4 +1,4 @@
-package com.example.application001
+package com.example.application001.network
 
 import com.google.gson.Gson
 import com.google.gson.annotations.SerializedName
@@ -8,6 +8,7 @@ import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaType
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.IOException
+import java.util.concurrent.TimeUnit
 
 // Data classes for OpenAI API
 data class ChatMessage(
@@ -38,12 +39,19 @@ data class ErrorResponse(
 )
 
 class OpenAIClient(private val apiKey: String) {
-    private val client = OkHttpClient()
+    private val client = OkHttpClient.Builder()
+        .connectTimeout(30, TimeUnit.SECONDS)
+        .writeTimeout(30, TimeUnit.SECONDS)
+        .readTimeout(30, TimeUnit.SECONDS)
+        .build()
     private val gson = Gson()
     private val mediaType = "application/json; charset=utf-8".toMediaType()
 
     suspend fun sendMessage(messages: List<ChatMessage>, systemPrompt: String = "You are a cute, friendly plushie companion for children. Respond in a warm, encouraging, and playful way. Keep responses short and age-appropriate."): Result<String> = withContext(Dispatchers.IO) {
         try {
+            println("OpenAIClient: Starting API request with API key: ${apiKey.take(10)}...")
+            println("OpenAIClient: System prompt: $systemPrompt")
+            println("OpenAIClient: Messages count: ${messages.size}")
             val request = ChatRequest(
                 model = "gpt-4o-mini",
                 messages = listOf(
@@ -63,8 +71,11 @@ class OpenAIClient(private val apiKey: String) {
                 .addHeader("Content-Type", "application/json")
                 .build()
 
+            println("OpenAIClient: Making HTTP request to: ${httpRequest.url}")
             val response = client.newCall(httpRequest).execute()
             val responseBody = response.body?.string()
+            println("OpenAIClient: Response code: ${response.code}")
+            println("OpenAIClient: Response body: ${responseBody?.take(200)}...")
 
             if (response.isSuccessful && responseBody != null) {
                 val chatResponse = gson.fromJson(responseBody, ChatResponse::class.java)
@@ -79,8 +90,12 @@ class OpenAIClient(private val apiKey: String) {
                 Result.failure(Exception("HTTP Error: ${response.code} - ${responseBody ?: "Unknown error"}"))
             }
         } catch (e: IOException) {
-            Result.failure(Exception("Network error: ${e.message}"))
+            println("OpenAIClient: IOException: ${e.message}")
+            e.printStackTrace()
+            Result.failure(Exception("Network error: ${e.message} - Check your internet connection and DNS settings"))
         } catch (e: Exception) {
+            println("OpenAIClient: Exception: ${e.message}")
+            e.printStackTrace()
             Result.failure(Exception("Unexpected error: ${e.message}"))
         }
     }

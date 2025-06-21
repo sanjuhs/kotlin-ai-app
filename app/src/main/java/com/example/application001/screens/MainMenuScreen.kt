@@ -1,4 +1,6 @@
-package com.example.application001
+package com.example.application001.screens
+
+import com.example.application001.data.MotionSensorManager
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -71,11 +73,11 @@ fun MainMenuScreen() {
                     contentAlignment = Alignment.Center,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    Text(
-                        text = "🧸",
-                        fontSize = 80.sp,
-                        textAlign = TextAlign.Center
-                    )
+                                            Text(
+                            text = "🦄",
+                            fontSize = 80.sp,
+                            textAlign = TextAlign.Center
+                        )
                 }
             }
             
@@ -83,7 +85,7 @@ fun MainMenuScreen() {
             
             // Welcome message
             Text(
-                text = "Welcome to Plushie Land!",
+                text = "Welcome to Smol Companions!",
                 fontSize = 32.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color(0xFF4A90E2),
@@ -93,7 +95,7 @@ fun MainMenuScreen() {
             Spacer(modifier = Modifier.height(8.dp))
             
             Text(
-                text = "Your cuddly AI companion awaits! 🌟",
+                text = "Your adorable smart assistant is here! 🌟",
                 fontSize = 18.sp,
                 color = Color(0xFF666666),
                 textAlign = TextAlign.Center
@@ -207,14 +209,14 @@ fun MainMenuScreen() {
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Text(
-                        text = "✨ Fun Features ✨",
+                        text = "✨ Smart Features ✨",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = Color(0xFFFF8F00)
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "• Chat with your AI plushie companion\n• Customize personality and prompts\n• Motion detection with haptic feedback\n• Powered by GPT-4o-mini",
+                        text = "• Chat with your smol AI companion\n• Customize personality and responses\n• Motion detection with haptic feedback\n• Powered by GPT-4o-mini",
                         fontSize = 14.sp,
                         color = Color(0xFF795548),
                         textAlign = TextAlign.Center

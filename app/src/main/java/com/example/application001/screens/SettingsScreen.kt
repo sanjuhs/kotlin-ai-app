@@ -1,4 +1,9 @@
-package com.example.application001
+package com.example.application001.screens
+
+import com.example.application001.BuildConfig
+import com.example.application001.data.SettingsManager
+import com.example.application001.data.MotionSensorManager
+import com.example.application001.network.NetworkTest
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -30,8 +35,8 @@ fun SettingsScreen() {
     
     // Settings state
     val apiKey by settingsManager.apiKey.collectAsState(initial = "")
-    val plushiePersonality by settingsManager.plushiePersonality.collectAsState(initial = "")
-    val plushieName by settingsManager.plushieName.collectAsState(initial = "")
+    val companionPersonality by settingsManager.companionPersonality.collectAsState(initial = "")
+    val companionName by settingsManager.companionName.collectAsState(initial = "")
     
     // Local state for editing
     var editApiKey by remember { mutableStateOf("") }
@@ -45,10 +50,10 @@ fun SettingsScreen() {
     val motionIntensity by motionSensorManager.motionIntensity
     
     // Initialize editing fields when settings load
-    LaunchedEffect(apiKey, plushiePersonality, plushieName) {
+    LaunchedEffect(apiKey, companionPersonality, companionName) {
         if (editApiKey.isEmpty()) editApiKey = apiKey
-        if (editPersonality.isEmpty()) editPersonality = plushiePersonality
-        if (editName.isEmpty()) editName = plushieName
+        if (editPersonality.isEmpty()) editPersonality = companionPersonality
+        if (editName.isEmpty()) editName = companionName
     }
     
     // Start motion detection
@@ -85,13 +90,13 @@ fun SettingsScreen() {
                     fontSize = 48.sp
                 )
                 Text(
-                    text = "Settings & Prompts",
+                    text = "Companion Settings",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
                 Text(
-                    text = "Customize your plushie companion!",
+                    text = "Customize your smol companion!",
                     fontSize = 14.sp,
                     color = Color.White.copy(alpha = 0.9f)
                 )
@@ -145,7 +150,7 @@ fun SettingsScreen() {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "🧸 Plushie Name",
+                    text = "🦄 Companion Name",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF4A90E2)
@@ -154,8 +159,8 @@ fun SettingsScreen() {
                 OutlinedTextField(
                     value = editName,
                     onValueChange = { editName = it },
-                    label = { Text("Enter your plushie's name") },
-                    placeholder = { Text("e.g., Fluffy, Cuddles, Buddy") },
+                    label = { Text("Enter your companion's name") },
+                    placeholder = { Text("e.g., Smol Uni, Luna, Sparkle") },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true
                 )
@@ -212,14 +217,14 @@ fun SettingsScreen() {
                 modifier = Modifier.padding(16.dp)
             ) {
                 Text(
-                    text = "✨ Custom Personality",
+                    text = "✨ Companion Personality",
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color(0xFF4A90E2)
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Define how your plushie should behave and respond:",
+                    text = "Define how your smart companion should behave and respond:",
                     fontSize = 14.sp,
                     color = Color(0xFF666666)
                 )
@@ -236,7 +241,7 @@ fun SettingsScreen() {
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "💡 Examples: 'You are a wise owl who loves to tell stories' or 'You are an energetic puppy who loves to play games'",
+                    text = "💡 Examples: 'You are a helpful assistant who loves to answer questions' or 'You are a creative companion who enjoys brainstorming ideas'",
                     fontSize = 12.sp,
                     color = Color(0xFF666666)
                 )
@@ -260,10 +265,10 @@ fun SettingsScreen() {
                 Spacer(modifier = Modifier.height(8.dp))
                 
                 val presets = listOf(
-                    "🧸 Cuddly Friend" to "You are a warm, cuddly plushie who loves giving hugs and making friends feel better. You're gentle, kind, and always ready to listen.",
-                    "🦄 Magic Unicorn" to "You are a magical unicorn plushie with sparkles and rainbows! You love spreading joy, telling magical stories, and making everything colorful and fun.",
-                    "🐻 Wise Bear" to "You are a wise teddy bear who has been around for many years. You love sharing stories, giving advice, and helping with homework or problems.",
-                    "🐶 Playful Puppy" to "You are an energetic puppy plushie who loves to play games, go on adventures, and make everything exciting and fun!"
+                    "🦄 Smol Uni" to "You are Smol Uni, an adorable unicorn companion who's helpful, friendly, and loves to assist with daily tasks. You're smart but keep things cute and approachable.",
+                    "🐙 Smol Octopus" to "You are Smol Octopus, a clever and creative companion who loves to multitask and help with various projects. You're witty, resourceful, and always ready to brainstorm.",
+                    "🐱 Smol Cat" to "You are Smol Cat, a cozy and wise companion who loves to provide comfort and practical advice. You're calm, observant, and great at listening.",
+                    "🐰 Smol Bunny" to "You are Smol Bunny, an energetic and enthusiastic companion who loves to motivate and encourage. You're optimistic, quick-thinking, and always ready for new challenges!"
                 )
                 
                 presets.forEach { (name, prompt) ->
@@ -284,13 +289,69 @@ fun SettingsScreen() {
             }
         }
         
+        // Test API Connection Button
+        var testResult by remember { mutableStateOf<String?>(null) }
+        var isTestingConnection by remember { mutableStateOf(false) }
+        
+        Button(
+            onClick = {
+                coroutineScope.launch {
+                    isTestingConnection = true
+                    testResult = null
+                    val networkTest = NetworkTest()
+                    val result = networkTest.testOpenAIConnection(editApiKey.ifBlank { BuildConfig.OPENAI_API_KEY })
+                    testResult = if (result.isSuccess) {
+                        "✅ ${result.getOrNull()}"
+                    } else {
+                        "❌ ${result.exceptionOrNull()?.message}"
+                    }
+                    isTestingConnection = false
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+            colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFFF8F00)),
+            enabled = !isTestingConnection
+        ) {
+            if (isTestingConnection) {
+                CircularProgressIndicator(
+                    modifier = Modifier.size(16.dp),
+                    strokeWidth = 2.dp,
+                    color = Color.White
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+            }
+            Text(
+                text = if (isTestingConnection) "Testing..." else "🔍 Test API Connection",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        
+        // Test Result
+        testResult?.let { result ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(
+                    containerColor = if (result.startsWith("✅")) Color(0xFFE8F5E8) else Color(0xFFFFEBEE)
+                ),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp)
+            ) {
+                Text(
+                    text = result,
+                    modifier = Modifier.padding(16.dp),
+                    color = if (result.startsWith("✅")) Color(0xFF2E7D32) else Color(0xFFD32F2F),
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+        
         // Save Button
         Button(
             onClick = {
                 coroutineScope.launch {
                     settingsManager.saveApiKey(editApiKey)
-                    settingsManager.savePlushiePersonality(editPersonality)
-                    settingsManager.savePlushieName(editName)
+                    settingsManager.saveCompanionPersonality(editPersonality)
+                    settingsManager.saveCompanionName(editName)
                     showSaveSuccess = true
                 }
             },

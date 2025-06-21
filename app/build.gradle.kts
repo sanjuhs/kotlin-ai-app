@@ -1,7 +1,20 @@
+import java.util.Properties
+import java.io.FileInputStream
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
 }
+
+// Load local.properties
+val localProperties = Properties()
+val localPropertiesFile = rootProject.file("local.properties")
+if (localPropertiesFile.exists()) {
+    localProperties.load(FileInputStream(localPropertiesFile))
+}
+
+// Get the API key from local.properties
+val openaiApiKey = localProperties.getProperty("OPENAI_API_KEY") ?: ""
 
 android {
     namespace = "com.example.application001"
@@ -18,16 +31,19 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        
+        // Add the API key to BuildConfig
+        buildConfigField("String", "OPENAI_API_KEY", "\"$openaiApiKey\"")
     }
 
     buildTypes {
         debug {
-            buildConfigField("String", "OPENAI_API_KEY", "\"${project.findProperty("OPENAI_API_KEY") ?: ""}\"")
+            // API key is already set in defaultConfig
         }
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            buildConfigField("String", "OPENAI_API_KEY", "\"${project.findProperty("OPENAI_API_KEY") ?: ""}\"")
+            // API key is already set in defaultConfig
         }
     }
     compileOptions {
@@ -88,6 +104,9 @@ dependencies {
     
     // DataStore for settings
     implementation("androidx.datastore:datastore-preferences:1.0.0")
+    
+    // WebRTC for voice chat
+    implementation("io.getstream:stream-webrtc-android:1.1.3")
     
     // Testing
     testImplementation("junit:junit:4.13.2")

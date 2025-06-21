@@ -1,4 +1,4 @@
-package com.example.application001
+package com.example.application001.screens
 
 import android.content.Context
 import android.hardware.Sensor

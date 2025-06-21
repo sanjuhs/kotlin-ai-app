@@ -24,6 +24,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.application001.ui.theme.Application001Theme
+import com.example.application001.utils.ChatViewModel
+import com.example.application001.utils.UiChatMessage
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
@@ -35,7 +37,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    PlushieApp()
+                    SmolCompanionApp()
                 }
             }
         }
@@ -78,17 +80,17 @@ fun PlushieChatScreen(
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
                 Text(
-                    text = "🧸",
+                    text = "🦄",
                     fontSize = 48.sp
                 )
                 Text(
-                    text = "Plushie Chat",
+                    text = "Smol Uni Chat",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
                     color = Color.White
                 )
                 Text(
-                    text = "Your cuddly AI companion!",
+                    text = "Your adorable smart companion!",
                     fontSize = 14.sp,
                     color = Color.White.copy(alpha = 0.9f)
                 )
@@ -147,7 +149,7 @@ fun PlushieChatScreen(
                                 modifier = Modifier.padding(16.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(text = "🧸", fontSize = 16.sp)
+                                Text(text = "🦄", fontSize = 16.sp)
                                 Spacer(modifier = Modifier.width(8.dp))
                                 CircularProgressIndicator(
                                     modifier = Modifier.size(16.dp),
@@ -181,7 +183,7 @@ fun PlushieChatScreen(
                     value = messageText,
                     onValueChange = { messageText = it },
                     modifier = Modifier.weight(1f),
-                    placeholder = { Text("Type a message to your plushie...") },
+                    placeholder = { Text("Ask your smol companion anything...") },
                     keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                     keyboardActions = KeyboardActions(
                         onSend = {
@@ -239,12 +241,12 @@ fun ChatMessageItem(message: UiChatMessage) {
                 if (!message.isFromUser) {
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         Text(
-                            text = "🧸",
+                            text = "🦄",
                             fontSize = 14.sp
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "Plushie",
+                            text = "Smol Uni",
                             fontSize = 12.sp,
                             fontWeight = FontWeight.Bold,
                             color = Color.Gray

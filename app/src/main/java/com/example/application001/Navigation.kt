@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Chat
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.Mic
 import androidx.compose.material.icons.filled.PhoneAndroid
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -19,16 +20,22 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.example.application001.screens.MainMenuScreen
+import com.example.application001.screens.SettingsScreen
+import com.example.application001.screens.RealtimeMotionScreen
+import com.example.application001.utils.ChatViewModel
+import com.example.application001.voice.LiveVoiceScreen
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object MainMenu : Screen("main_menu", "Home", Icons.Filled.Home)
     object Chat : Screen("chat", "Chat", Icons.AutoMirrored.Filled.Chat)
+    object LiveVoice : Screen("live_voice", "Voice", Icons.Filled.Mic)
     object RealtimeMotion : Screen("realtime_motion", "Motion", Icons.Filled.PhoneAndroid)
     object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
 }
 
 @Composable
-fun PlushieApp() {
+fun SmolCompanionApp() {
     val navController = rememberNavController()
     val context = LocalContext.current
     
@@ -38,7 +45,7 @@ fun PlushieApp() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
                 
-                listOf(Screen.MainMenu, Screen.Chat, Screen.RealtimeMotion, Screen.Settings).forEach { screen ->
+                listOf(Screen.MainMenu, Screen.Chat, Screen.LiveVoice, Screen.RealtimeMotion, Screen.Settings).forEach { screen ->
                     NavigationBarItem(
                         icon = { Icon(screen.icon, contentDescription = screen.title) },
                         label = { Text(screen.title) },
@@ -69,6 +76,9 @@ fun PlushieApp() {
                 PlushieChatScreen(
                     viewModel = viewModel { ChatViewModel(context) }
                 )
+            }
+            composable(Screen.LiveVoice.route) {
+                LiveVoiceScreen()
             }
             composable(Screen.RealtimeMotion.route) {
                 RealtimeMotionScreen()

@@ -1,4 +1,4 @@
-package com.example.application001
+package com.example.application001.data
 
 import android.content.Context
 import androidx.datastore.core.DataStore
@@ -15,20 +15,20 @@ class SettingsManager(private val context: Context) {
     
     companion object {
         val API_KEY = stringPreferencesKey("api_key")
-        val PLUSHIE_PERSONALITY = stringPreferencesKey("plushie_personality")
-        val PLUSHIE_NAME = stringPreferencesKey("plushie_name")
+        val COMPANION_PERSONALITY = stringPreferencesKey("companion_personality")
+        val COMPANION_NAME = stringPreferencesKey("companion_name")
     }
     
     val apiKey: Flow<String> = context.dataStore.data.map { preferences ->
         preferences[API_KEY] ?: "your-openai-api-key-here"
     }
     
-    val plushiePersonality: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[PLUSHIE_PERSONALITY] ?: "You are a cute, friendly plushie companion for children. Respond in a warm, encouraging, and playful way. Keep responses short and age-appropriate."
+    val companionPersonality: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[COMPANION_PERSONALITY] ?: "You are Smol Uni, an adorable and helpful smart companion. You're friendly, approachable, and love to assist with daily tasks, answer questions, and provide support. Keep your responses warm but intelligent."
     }
     
-    val plushieName: Flow<String> = context.dataStore.data.map { preferences ->
-        preferences[PLUSHIE_NAME] ?: "Plushie"
+    val companionName: Flow<String> = context.dataStore.data.map { preferences ->
+        preferences[COMPANION_NAME] ?: "Smol Uni"
     }
     
     suspend fun saveApiKey(apiKey: String) {
@@ -37,15 +37,15 @@ class SettingsManager(private val context: Context) {
         }
     }
     
-    suspend fun savePlushiePersonality(personality: String) {
+    suspend fun saveCompanionPersonality(personality: String) {
         context.dataStore.edit { preferences ->
-            preferences[PLUSHIE_PERSONALITY] = personality
+            preferences[COMPANION_PERSONALITY] = personality
         }
     }
     
-    suspend fun savePlushieName(name: String) {
+    suspend fun saveCompanionName(name: String) {
         context.dataStore.edit { preferences ->
-            preferences[PLUSHIE_NAME] = name
+            preferences[COMPANION_NAME] = name
         }
     }
 } 

@@ -1,4 +1,9 @@
-package com.example.application001
+package com.example.application001.utils
+
+import com.example.application001.BuildConfig
+import com.example.application001.data.SettingsManager
+import com.example.application001.network.OpenAIClient
+import com.example.application001.network.ChatMessage
 
 import android.content.Context
 import androidx.lifecycle.ViewModel
@@ -27,7 +32,9 @@ class ChatViewModel(private val context: Context) : ViewModel() {
     private val settingsManager = SettingsManager(context)
     private var openAIClient = OpenAIClient(BuildConfig.OPENAI_API_KEY)
 
+
     init {
+        println("OPENAI_API_KEY: ${BuildConfig.OPENAI_API_KEY}")
         viewModelScope.launch {
             // Initialize OpenAI client with saved API key or fallback to BuildConfig
             val savedApiKey = settingsManager.apiKey.first()
@@ -41,14 +48,14 @@ class ChatViewModel(private val context: Context) : ViewModel() {
                 openAIClient = OpenAIClient(apiKey)
             }
             
-            // Get plushie name for welcome message
-            val plushieName = settingsManager.plushieName.first()
+            // Get companion name for welcome message
+            val companionName = settingsManager.companionName.first()
             
-            // Add a welcome message from the plushie
+            // Add a welcome message from the companion
             _uiState.value = _uiState.value.copy(
                 messages = listOf(
                     UiChatMessage(
-                        content = "Hi there! I'm $plushieName, your friendly plushie companion! 🧸✨ What would you like to chat about today?",
+                        content = "Hi there! I'm $companionName, your adorable smart companion! 🦄✨ What can I help you with today?",
                         isFromUser = false
                     )
                 )
@@ -75,7 +82,7 @@ class ChatViewModel(private val context: Context) : ViewModel() {
 
         viewModelScope.launch {
             // Get current personality from settings
-            val personality = settingsManager.plushiePersonality.first()
+            val personality = settingsManager.companionPersonality.first()
             
             openAIClient.sendMessage(conversationHistory, personality)
                 .onSuccess { response ->
