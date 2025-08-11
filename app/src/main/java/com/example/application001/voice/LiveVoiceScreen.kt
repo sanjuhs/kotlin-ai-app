@@ -3,6 +3,7 @@ package com.example.application001.voice
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,7 +32,9 @@ import com.example.application001.data.SettingsManager
 import kotlinx.coroutines.launch
 
 @Composable
-fun LiveVoiceScreen() {
+fun LiveVoiceScreen(
+    onNavigateToGemini: () -> Unit = {}
+) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val settingsManager = remember { SettingsManager(context) }
@@ -42,6 +45,8 @@ fun LiveVoiceScreen() {
     var isSpeaking by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showInstructions by remember { mutableStateOf(true) }
+    var isSpeakerMode by remember { mutableStateOf(true) } // Default to speaker mode
+    var showDebugDialog by remember { mutableStateOf(false) }
     
     // Settings
     var currentPersonality by remember { mutableStateOf("") }
@@ -49,6 +54,29 @@ fun LiveVoiceScreen() {
     
     // WebRTC Manager
     var webRTCManager by remember { mutableStateOf<WebRTCManager?>(null) }
+    
+    // Audio debug helper
+    val audioDebugHelper = remember { AudioDebugHelper(context) }
+    
+    // Speaker mode control functions
+    fun setSpeakerMode(enabled: Boolean) {
+        try {
+            Log.d("LiveVoiceScreen", "🔊 Setting speaker mode through WebRTC: $enabled")
+            webRTCManager?.setSpeakerMode(enabled)
+            isSpeakerMode = enabled
+            
+            // Log current audio state
+            webRTCManager?.getCurrentAudioState()?.let { state ->
+                Log.d("LiveVoiceScreen", "🔊 Audio state after change: $state")
+            }
+        } catch (e: Exception) {
+            Log.e("LiveVoiceScreen", "❌ Failed to set speaker mode", e)
+        }
+    }
+    
+    fun toggleSpeakerMode() {
+        setSpeakerMode(!isSpeakerMode)
+    }
     
     // Load settings
     LaunchedEffect(Unit) {
@@ -81,6 +109,13 @@ fun LiveVoiceScreen() {
                 isConnecting = false
                 showInstructions = false
                 errorMessage = null
+                // Enable speaker mode by default when connected with a slight delay
+                // to ensure WebRTC has finished its audio setup
+                scope.launch {
+                    kotlinx.coroutines.delay(1000) // Wait 1 second for WebRTC to fully settle
+                    setSpeakerMode(true)
+                    Log.d("LiveVoiceScreen", "🔊 Speaker mode enabled after connection")
+                }
             }
             
             override fun onDisconnected() {
@@ -88,10 +123,17 @@ fun LiveVoiceScreen() {
                 isConnecting = false
                 isSpeaking = false
                 showInstructions = true
+                // Audio cleanup is handled by WebRTCManager
+                Log.d("LiveVoiceScreen", "📱 Voice chat disconnected")
             }
             
             override fun onSpeakingStarted() {
                 isSpeaking = true
+                // Ensure speaker mode is active when AI starts speaking
+                if (isSpeakerMode) {
+                    Log.d("LiveVoiceScreen", "🗣️ AI started speaking, re-enforcing speaker mode")
+                    setSpeakerMode(true)
+                }
             }
             
             override fun onSpeakingStopped() {
@@ -105,7 +147,16 @@ fun LiveVoiceScreen() {
             }
             
             override fun onAudioReceived() {
-                // Audio stream received
+                // Audio stream received - ensure speaker mode is still active
+                Log.d("LiveVoiceScreen", "🎵 Audio received from OpenAI")
+                if (isConnected && isSpeakerMode) {
+                    // Re-enforce speaker mode when audio is received
+                    scope.launch {
+                        kotlinx.coroutines.delay(200) // Small delay to let audio start
+                        setSpeakerMode(true)
+                        Log.d("LiveVoiceScreen", "🔊 Re-enforced speaker mode for incoming audio")
+                    }
+                }
             }
         }
     }
@@ -210,13 +261,33 @@ fun LiveVoiceScreen() {
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            // Switch to Gemini button
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                OutlinedButton(
+                    onClick = onNavigateToGemini,
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.White
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        brush = Brush.horizontalGradient(listOf(Color.White, Color.White))
+                    )
+                ) {
+                    Text("🤖 Try Gemini Live")
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(10.dp))
+            
             // Title
             Text(
-                text = "🎙️ Voice Chat",
+                text = "🎙️ OpenAI Voice Chat",
                 fontSize = 28.sp,
                 fontWeight = FontWeight.Bold,
                 color = Color.White,
-                modifier = Modifier.padding(top = 20.dp, bottom = 10.dp)
+                textAlign = TextAlign.Center
             )
             
             Text(
@@ -305,6 +376,25 @@ fun LiveVoiceScreen() {
             if (isConnected) {
                 Spacer(modifier = Modifier.height(16.dp))
                 
+                // Speaker toggle button
+                OutlinedButton(
+                    onClick = { toggleSpeakerMode() },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = Color.White
+                    ),
+                    border = ButtonDefaults.outlinedButtonBorder.copy(
+                        brush = Brush.horizontalGradient(listOf(Color.White, Color.White))
+                    )
+                ) {
+                    Text(
+                        text = if (isSpeakerMode) "🔊 Speaker Mode (Tap for Phone)" else "📱 Phone Mode (Tap for Speaker)",
+                        fontSize = 14.sp
+                    )
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(12.dp)
@@ -350,9 +440,42 @@ fun LiveVoiceScreen() {
                 ) {
                     Text("⚡ Ask for Response", fontSize = 14.sp)
                 }
+                
+
             }
             
             Spacer(modifier = Modifier.height(20.dp))
+        }
+        
+        // Small debug button in top-right corner
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(16.dp)
+        ) {
+            IconButton(
+                onClick = { showDebugDialog = true },
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(
+                        Color.White.copy(alpha = 0.1f),
+                        CircleShape
+                    )
+            ) {
+                Text(
+                    text = "🔧",
+                    fontSize = 16.sp,
+                    color = Color.White
+                )
+            }
+        }
+        
+        // Debug Dialog
+        if (showDebugDialog) {
+            DebugDialog(
+                audioDebugHelper = audioDebugHelper,
+                onDismiss = { showDebugDialog = false }
+            )
         }
     }
 }
@@ -583,4 +706,75 @@ fun ErrorCard(
             }
         }
     }
+}
+
+@Composable
+fun DebugDialog(
+    audioDebugHelper: AudioDebugHelper,
+    onDismiss: () -> Unit
+) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = {
+            Text(
+                text = "🔧 Audio Debug Tools",
+                fontWeight = FontWeight.Bold,
+                color = Color.White
+            )
+        },
+        text = {
+            Column {
+                Text(
+                    text = "Test audio functionality and view debug information.",
+                    color = Color.White.copy(alpha = 0.9f),
+                    fontSize = 14.sp
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Button(
+                    onClick = {
+                        Log.d("LiveVoiceScreen", "🔧 Debug button pressed")
+                        audioDebugHelper.logCurrentAudioState()
+                        val testResult = audioDebugHelper.testSpeakerMode()
+                        Log.d("LiveVoiceScreen", "🔊 Speaker test result: $testResult")
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF4299E1)
+                    )
+                ) {
+                    Text("🔊 Test Speaker Mode")
+                }
+                
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Button(
+                    onClick = {
+                        Log.d("LiveVoiceScreen", "📊 Logging audio state")
+                        audioDebugHelper.logCurrentAudioState()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFF38A169)
+                    )
+                ) {
+                    Text("📊 Log Audio State")
+                }
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = onDismiss,
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = Color.White
+                )
+            ) {
+                Text("Close")
+            }
+        },
+        containerColor = Color(0xFF2D3748),
+        titleContentColor = Color.White,
+        textContentColor = Color.White
+    )
 } 

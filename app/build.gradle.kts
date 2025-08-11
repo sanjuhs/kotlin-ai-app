@@ -13,8 +13,9 @@ if (localPropertiesFile.exists()) {
     localProperties.load(FileInputStream(localPropertiesFile))
 }
 
-// Get the API key from local.properties
+// Get the API keys from local.properties
 val openaiApiKey = localProperties.getProperty("OPENAI_API_KEY") ?: ""
+val geminiApiKey = localProperties.getProperty("GEMINI_API_KEY") ?: ""
 
 android {
     namespace = "com.example.application001"
@@ -32,8 +33,9 @@ android {
             useSupportLibrary = true
         }
         
-        // Add the API key to BuildConfig
+        // Add the API keys to BuildConfig
         buildConfigField("String", "OPENAI_API_KEY", "\"$openaiApiKey\"")
+        buildConfigField("String", "GEMINI_API_KEY", "\"$geminiApiKey\"")
     }
 
     buildTypes {
@@ -107,6 +109,9 @@ dependencies {
     
     // WebRTC for voice chat
     implementation("io.getstream:stream-webrtc-android:1.1.3")
+    
+    // Gemini AI for live chat
+    implementation("com.google.ai.client.generativeai:generativeai:0.7.0")
     
     // Testing
     testImplementation("junit:junit:4.13.2")

@@ -25,11 +25,13 @@ import com.example.application001.screens.SettingsScreen
 import com.example.application001.screens.RealtimeMotionScreen
 import com.example.application001.utils.ChatViewModel
 import com.example.application001.voice.LiveVoiceScreen
+import com.example.application001.voice.gemini.GeminiLiveScreen
 
 sealed class Screen(val route: String, val title: String, val icon: ImageVector) {
     object MainMenu : Screen("main_menu", "Home", Icons.Filled.Home)
     object Chat : Screen("chat", "Chat", Icons.AutoMirrored.Filled.Chat)
     object LiveVoice : Screen("live_voice", "Voice", Icons.Filled.Mic)
+    object GeminiLive : Screen("gemini_live", "Gemini", Icons.Filled.Mic)
     object RealtimeMotion : Screen("realtime_motion", "Motion", Icons.Filled.PhoneAndroid)
     object Settings : Screen("settings", "Settings", Icons.Filled.Settings)
 }
@@ -78,7 +80,18 @@ fun SmolCompanionApp() {
                 )
             }
             composable(Screen.LiveVoice.route) {
-                LiveVoiceScreen()
+                LiveVoiceScreen(
+                    onNavigateToGemini = {
+                        navController.navigate(Screen.GeminiLive.route)
+                    }
+                )
+            }
+            composable(Screen.GeminiLive.route) {
+                GeminiLiveScreen(
+                    onBackToOpenAI = {
+                        navController.popBackStack()
+                    }
+                )
             }
             composable(Screen.RealtimeMotion.route) {
                 RealtimeMotionScreen()

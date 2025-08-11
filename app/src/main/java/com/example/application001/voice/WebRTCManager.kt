@@ -66,6 +66,7 @@ class WebRTCManager(
     private var localAudioSource: AudioSource? = null
     private var peerConnectionFactory: PeerConnectionFactory? = null
     private val gson = Gson()
+    private val audioModeManager = AudioModeManager(context)
     
     companion object {
         private const val TAG = "WebRTCManager"
@@ -76,6 +77,7 @@ class WebRTCManager(
         Log.d(TAG, "🏗️ Initializing WebRTCManager...")
         try {
             initializePeerConnectionFactory()
+            initializeAudioManager()
             Log.d(TAG, "✅ WebRTCManager initialized successfully")
         } catch (e: Exception) {
             Log.e(TAG, "❌ Failed to initialize WebRTCManager", e)
@@ -94,12 +96,28 @@ class WebRTCManager(
         
         val options = PeerConnectionFactory.Options()
         
-        Log.d(TAG, "🔨 Building PeerConnectionFactory...")
+        // Create custom audio device module for better speaker control
+        val audioDeviceModule = audioModeManager.createWebRTCAudioDeviceModule()
+        
+        Log.d(TAG, "🔨 Building PeerConnectionFactory with custom audio module...")
         peerConnectionFactory = PeerConnectionFactory.builder()
             .setOptions(options)
+            .setAudioDeviceModule(audioDeviceModule)
             .createPeerConnectionFactory()
             
-        Log.d(TAG, "✅ PeerConnectionFactory created successfully")
+        Log.d(TAG, "✅ PeerConnectionFactory created successfully with custom audio module")
+    }
+    
+    private fun initializeAudioManager() {
+        Log.d(TAG, "🎵 Initializing audio manager...")
+        try {
+            // Start voice call audio setup through our dedicated manager
+            val success = audioModeManager.startVoiceCall()
+            Log.d(TAG, "✅ Audio manager initialized: $success")
+            Log.d(TAG, "🔊 Current audio state: ${audioModeManager.getCurrentAudioState()}")
+        } catch (e: Exception) {
+            Log.e(TAG, "❌ Failed to initialize audio manager", e)
+        }
     }
 
     suspend fun connectToOpenAI(sessionToken: String, personality: String, companionName: String): Boolean {
@@ -212,7 +230,17 @@ class WebRTCManager(
                 rtpTransceiver?.receiver?.track()?.let { track ->
                     if (track.kind() == "audio") {
                         track.setEnabled(true)
-                        Log.d(TAG, "✅ Audio track enabled")
+                        Log.d(TAG, "✅ Audio track enabled for playback")
+                        
+                        // Ensure the audio track is properly configured for speaker output
+                        if (track is AudioTrack) {
+                            track.setVolume(1.0) // Set maximum volume
+                            Log.d(TAG, "🔊 Audio track volume set to maximum")
+                        }
+                        
+                        // Re-enforce speaker mode when audio track is received
+                        audioModeManager.enableSpeakerPhone(true)
+                        Log.d(TAG, "🔊 Re-enforced speaker mode for incoming audio")
                     }
                 }
             }
@@ -495,6 +523,10 @@ class WebRTCManager(
     fun disconnect() {
         Log.d(TAG, "💤 Disconnecting WebRTC...")
         
+        // Stop voice call audio through our dedicated manager
+        audioModeManager.stopVoiceCall()
+        Log.d(TAG, "🔊 Audio mode manager stopped")
+        
         dataChannel?.close()
         dataChannel = null
         
@@ -508,6 +540,16 @@ class WebRTCManager(
         peerConnection = null
         
         listener.onDisconnected()
+    }
+
+    fun setSpeakerMode(enabled: Boolean) {
+        audioModeManager.enableSpeakerPhone(enabled)
+        Log.d(TAG, "🔊 Speaker mode set to: $enabled")
+        Log.d(TAG, "🔊 Current audio state: ${audioModeManager.getCurrentAudioState()}")
+    }
+    
+    fun getCurrentAudioState(): String {
+        return audioModeManager.getCurrentAudioState()
     }
 
     fun dispose() {
